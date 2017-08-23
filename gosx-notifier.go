@@ -2,9 +2,13 @@ package gosxnotifier
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"net/url"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -35,8 +39,22 @@ type Notification struct {
 	Link         string //optional
 	Sender       string //optional
 	Group        string //optional
+	Remove       string //optional
 	AppIcon      string //optional
 	ContentImage string //optional
+	Timeout      int    //optional
+	Debug        bool
+}
+
+var (
+	rootPath  string
+	FinalPath string
+)
+
+func init() {
+	if supportedOS() {
+		FinalPath = "/usr/local/Cellar/terminal-notifier/1.7.1/bin/terminal-notifier"
+	}
 }
 
 func NewNotification(message string) *Notification {
@@ -73,6 +91,11 @@ func (n *Notification) Push() error {
 		//add group if specified
 		if n.Group != "" {
 			commandTuples = append(commandTuples, []string{"-group", n.Group}...)
+		}
+
+		//add group if specified
+		if n.Remove != "" {
+			commandTuples = append(commandTuples, []string{"-remove", n.Remove}...)
 		}
 
 		//add appIcon if specified
@@ -119,12 +142,31 @@ func (n *Notification) Push() error {
 			return errors.New("Please provide a Message and Type at a minimum.")
 		}
 
+		//add timeout if specified
+		if n.Timeout > 0 {
+			commandTuples = append(commandTuples, []string{"-timeout", strconv.Itoa(n.Timeout)}...)
+		}
+
+		if n.Debug {
+			fmt.Println(FinalPath)
+			fmt.Println(commandTuples)
+		}
+
 		_, err = exec.Command(FinalPath, commandTuples...).Output()
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func supportedOS() bool {
+	if runtime.GOOS == "darwin" {
+		return true
+	} else {
+		log.Print("OS does not support terminal-notifier")
+		return false
+	}
 }
 
 func normalizeImagePath(image string) (string, error) {
