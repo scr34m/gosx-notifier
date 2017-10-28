@@ -53,7 +53,7 @@ var (
 
 func init() {
 	if supportedOS() {
-		FinalPath = "/usr/local/Cellar/terminal-notifier/1.7.1/bin/terminal-notifier"
+		FinalPath = "terminal-notifier"
 	}
 }
 
